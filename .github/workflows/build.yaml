@@ -91,5 +91,5 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:base
           labels: ${{ steps.meta.outputs.labels }}
           build-args: | 
-            TF=${{ matrix.terraform }}
+            TF=${{ matrix.version }}
             CODE_BASE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:base
