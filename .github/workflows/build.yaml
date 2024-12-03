@@ -88,8 +88,8 @@ jobs:
         with:
           file: Dockerfile.terraform
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:base
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.version }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: | 
+          build-args: |
             TF=${{ matrix.version }}
             CODE_BASE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:base
