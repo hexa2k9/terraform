@@ -1,0 +1,19 @@
+ARG CODE_BASE
+
+FROM ${CODE_BASE}
+
+ARG TF
+ENV TF=${TF}
+ENV CHECKPOINT_DISABLE=true
+
+LABEL eu.port389.version.terraform=${TF}
+
+RUN set -eux \
+    && mkdir -p /tmp/build \
+    && cd /tmp/build \
+    && curl -sS -L -o terraform.zip https://releases.hashicorp.com/terraform/${TF}/terraform_${TF}_linux_amd64.zip \
+    && unzip -oqd /usr/local/bin/ terraform.zip \
+    && rm -rf /tmp/build \
+    && chmod +x /usr/local/bin/*
+
+CMD ["/bin/bash", "--login"]

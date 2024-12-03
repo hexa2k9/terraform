@@ -1,0 +1,89 @@
+ARG CODE_BASE=3.20
+
+FROM registry.gitlab.com/gitlab-org/terraform-images/stable:latest AS gitlab
+FROM alpine:${CODE_BASE}
+
+ARG VAULT_VERSION=1.18.1
+ENV VAULT_VERSION=${VAULT_VERSION}
+ARG JFROG_CLI_VERSION=2.71.3
+ENV JFROG_CLI_VERSION=${JFROG_CLI_VERSION}
+ARG CLOUD_SDK_VERSION=500.0.0
+ENV CLOUD_SDK_VERSION=${CLOUD_SDK_VERSION}
+
+LABEL eu.port389.version.vault=${VAULT_VERSION}
+LABEL eu.port389.version.jfrog=${JFROG_CLI_VERSION}
+LABEL eu.port389.version.cloud-sdk=${CLOUD_SDK_VERSION}
+
+ADD requirements.txt /tmp/requirements.txt
+
+RUN set -eux \
+    && apk add --no-cache \
+        jq \
+        git \
+        curl \
+        bash \
+        gnupg \
+        unzip \
+        libcap \
+        tzdata \
+        py3-pip \
+        python3 \
+        gettext \
+        openssl \
+        su-exec \
+        coreutils \
+        dumb-init \
+        py3-crcmod \
+        py3-openssl \
+        libc6-compat \
+        openssh-client \
+        ca-certificates \
+    && apk upgrade --no-cache \
+    && update-ca-certificates \
+    && pip3 install --no-cache-dir --break-system-packages --upgrade pip \
+    && pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt
+
+WORKDIR /
+
+RUN set -eux \
+    && curl -sS -L -o /usr/local/bin/jfrog https://releases.jfrog.io/artifactory/jfrog-cli/v2/${JFROG_CLI_VERSION}/jfrog-cli-linux-amd64/jfrog
+
+RUN set -eux \
+    && curl -sS -L -o google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz \
+    && tar xf google-cloud-sdk.tar.gz \
+    && rm -fv google-cloud-sdk.tar.gz \
+    && /google-cloud-sdk/install.sh --quiet --usage-reporting false \
+    && /google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin kubectl \
+    && for c in bq gcloud gsutil kubectl ; do ln -s /google-cloud-sdk/bin/${c} /usr/local/bin/${c}; done \
+    && gcloud config set core/disable_usage_reporting true \
+    && gcloud config set component_manager/disable_update_check true \
+    && gcloud config set metrics/environment github_docker_image \
+    && rm -rfv /google-cloud-sdk/bin/kubectl.* /google-cloud-sdk/bin/anthoscli \
+    && rm -rf /google-cloud-sdk/.install/.backup \
+    && gcloud version
+
+RUN set -eux \
+    && mkdir -p /tmp/build \
+    && cd /tmp/build \
+    && curl -sS -L -o tofu.zip \
+        $(curl -sS -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/opentofu/opentofu/releases?per_page=100 | \
+            jq -r '[.[] | select(.prerelease == false)][0] | .assets[] | select(.browser_download_url | endswith("linux_amd64.zip")) | .browser_download_url') \
+    && unzip tofu.zip \
+    && mv tofu /usr/local/bin
+
+WORKDIR /
+
+RUN set -eux \
+    && mkdir -p /tmp/build \
+    && cd /tmp/build \
+    && curl -sS -L -o vault.zip  https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip \
+    && unzip vault.zip \
+    && mv vault /usr/local/bin \
+    && rm -rf /tmp/build \
+    && chmod +x /usr/local/bin/*
+
+WORKDIR /
+
+COPY --from=gitlab /usr/bin/gitlab-terraform /usr/local/bin/gitlab-terraform
+
+CMD ["/bin/bash", "--login"]
