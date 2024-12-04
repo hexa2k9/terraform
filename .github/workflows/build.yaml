@@ -52,6 +52,8 @@ jobs:
         with:
           file: Dockerfile.base
           push: true
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:base
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:base
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -88,6 +90,8 @@ jobs:
         with:
           file: Dockerfile.terraform
           push: true
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.version }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.version }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
