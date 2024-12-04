@@ -14,7 +14,6 @@ RUN set -eux \
     && curl -sS -L -o terraform.zip https://releases.hashicorp.com/terraform/${TF}/terraform_${TF}_linux_amd64.zip \
     && unzip terraform.zip \
     && mv terraform /usr/local/bin \
-    && mv LICENSE.txt /usr/local/LICENSE.terraform \
     && rm -rf /tmp/build \
     && chmod +x /usr/local/bin/*
 
