@@ -3,6 +3,8 @@ FROM alpine:3.21
 
 ARG VAULT_VERSION=1.18.2
 ENV VAULT_VERSION=${VAULT_VERSION}
+ARG OPENTOFU_VERSION=1.8.7
+ENV OPENTOFU_VERSIONN=${OPENTOFU_VERSION}
 ARG JFROG_CLI_VERSION=2.72.2
 ENV JFROG_CLI_VERSION=${JFROG_CLI_VERSION}
 ARG CLOUD_SDK_VERSION=502.0.0
@@ -11,6 +13,7 @@ ENV CLOUD_SDK_VERSION=${CLOUD_SDK_VERSION}
 LABEL eu.port389.version.vault=${VAULT_VERSION}
 LABEL eu.port389.version.jfrog=${JFROG_CLI_VERSION}
 LABEL eu.port389.version.cloud-sdk=${CLOUD_SDK_VERSION}
+LABEL eu.port389.version.opentofu=${OPENTOFU_VERSIONN}
 
 ADD requirements.txt /tmp/requirements.txt
 
@@ -44,10 +47,12 @@ RUN set -eux \
 WORKDIR /
 
 RUN set -eux \
-    && curl -sS -L -o /usr/local/bin/jfrog https://releases.jfrog.io/artifactory/jfrog-cli/v2/${JFROG_CLI_VERSION}/jfrog-cli-linux-amd64/jfrog
+    && if [[ "$(uname -m)" == "aarch64" ]]; then export PLAT="arm64"; elif [[ "$(uname -m)" == "x86_64" ]]; then export PLAT="amd64"; else exit 1; fi \
+    && curl -sS -L -o /usr/local/bin/jfrog https://releases.jfrog.io/artifactory/jfrog-cli/v2/${JFROG_CLI_VERSION}/jfrog-cli-linux-${PLAT}/jfrog
 
 RUN set -eux \
-    && curl -sS -L -o google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz \
+    && if [[ "$(uname -m)" == "aarch64" ]]; then export PLAT="arm"; elif [[ "$(uname -m)" == "x86_64" ]]; then export PLAT="x86_64"; else exit 1; fi \
+    && curl -sS -L -o google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-${PLAT}.tar.gz \
     && tar xf google-cloud-sdk.tar.gz \
     && rm -fv google-cloud-sdk.tar.gz \
     && /google-cloud-sdk/install.sh --quiet --usage-reporting false \
@@ -61,11 +66,10 @@ RUN set -eux \
     && gcloud version
 
 RUN set -eux \
+    && if [[ "$(uname -m)" == "aarch64" ]]; then export PLAT="arm64"; elif [[ "$(uname -m)" == "x86_64" ]]; then export PLAT="amd64"; else exit 1; fi \
     && mkdir -p /tmp/build \
     && cd /tmp/build \
-    && curl -sS -L -o tofu.zip \
-        $(curl -sS -L -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/opentofu/opentofu/releases?per_page=100 | \
-            jq -r '[.[] | select(.prerelease == false)][0] | .assets[] | select(.browser_download_url | endswith("linux_amd64.zip")) | .browser_download_url') \
+    && curl -sS -L -o tofu.zip https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_linux_${PLAT}.zip \
     && unzip tofu.zip \
     && mv tofu /usr/local/bin \
     && mv LICENSE /usr/local/LICENSE.opentofu \
@@ -74,9 +78,10 @@ RUN set -eux \
 WORKDIR /
 
 RUN set -eux \
+    && if [[ "$(uname -m)" == "aarch64" ]]; then export PLAT="arm64"; elif [[ "$(uname -m)" == "x86_64" ]]; then export PLAT="amd64"; else exit 1; fi \
     && mkdir -p /tmp/build \
     && cd /tmp/build \
-    && curl -sS -L -o vault.zip  https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip \
+    && curl -sS -L -o vault.zip  https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_${PLAT}.zip \
     && unzip vault.zip \
     && mv vault /usr/local/bin \
     && mv LICENSE.txt /usr/local/LICENSE.vault \
