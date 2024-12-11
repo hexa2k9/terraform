@@ -1,6 +1,8 @@
 name: Build Terraform Images
 
 on:
+  schedule:
+    - cron: "0 5 * * 5"
   push:
     branches: ["main"]
 
