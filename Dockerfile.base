@@ -5,6 +5,8 @@ ARG VAULT_VERSION=1.19.5
 ENV VAULT_VERSION=${VAULT_VERSION}
 ARG OPENTOFU_VERSION=1.9.1
 ENV OPENTOFU_VERSIONN=${OPENTOFU_VERSION}
+ARG TERRAGRUNT_VERSION=0.81.3
+ENV TERRAGRUNT_VERSION=${TERRAGRUNT_VERSION}
 ARG JFROG_CLI_VERSION=2.76.1
 ENV JFROG_CLI_VERSION=${JFROG_CLI_VERSION}
 ARG CLOUD_SDK_VERSION=526.0.0
@@ -14,6 +16,7 @@ LABEL eu.port389.version.vault=${VAULT_VERSION}
 LABEL eu.port389.version.jfrog=${JFROG_CLI_VERSION}
 LABEL eu.port389.version.cloud-sdk=${CLOUD_SDK_VERSION}
 LABEL eu.port389.version.opentofu=${OPENTOFU_VERSIONN}
+LABEL eu.port389.version.terragrunt=${TERRAGRUNT_VERSION}
 
 ADD requirements.txt /tmp/requirements.txt
 
@@ -64,6 +67,12 @@ RUN set -eux \
     && rm -rfv /google-cloud-sdk/bin/kubectl.* /google-cloud-sdk/bin/anthoscli \
     && rm -rf /google-cloud-sdk/.install/.backup \
     && gcloud version
+
+#RUN set -eux \
+#    && if [[ "$(uname -m)" == "aarch64" ]]; then export PLAT="arm64"; elif [[ "$(uname -m)" == "x86_64" ]]; then export PLAT="amd64"; else exit 1; fi \
+#    && curl -sS -L -o /usr/local/bin/terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${PLAT} \
+#    && curl -sS -L -o /usr/local/LICENSE.terragrunt https://github.com/gruntwork-io/terragrunt/raw/refs/tags/v${TERRAGRUNT_VERSION}/LICENSE.txt \
+#    && chmod +x /usr/local/bin/terragrunt
 
 RUN set -eux \
     && if [[ "$(uname -m)" == "aarch64" ]]; then export PLAT="arm64"; elif [[ "$(uname -m)" == "x86_64" ]]; then export PLAT="amd64"; else exit 1; fi \
