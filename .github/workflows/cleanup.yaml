@@ -19,4 +19,5 @@ jobs:
             owner-type: user # or user
             token: ${{ secrets.PAT_TOKEN }}
             repository-owner: ${{ github.repository_owner }}
+            package-name: terraform
             delete-untagged: true
