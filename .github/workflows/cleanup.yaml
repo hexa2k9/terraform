@@ -1,0 +1,23 @@
+name: Delete Untagged Container Images
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'
+
+  workflow_dispatch:
+
+jobs:
+  delete-untagged-containers:
+    name: Delete Untagged Containers
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Delete untagged container versions
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: 'hexa2k9'
+          package-name: 'terraform'
+          package-type: 'container'
+          delete-untagged-versions: 'true'
