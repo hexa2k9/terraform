@@ -1,5 +1,5 @@
 FROM registry.gitlab.com/gitlab-org/terraform-images/stable:latest AS gitlab
-FROM alpine:3.22
+FROM alpine:3.23
 
 ARG VAULT_VERSION=1.20.2
 ENV VAULT_VERSION=${VAULT_VERSION}
